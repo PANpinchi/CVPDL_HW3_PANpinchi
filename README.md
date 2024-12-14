@@ -34,6 +34,7 @@ The current Stable Diffusion model relies on class labels or text prompts for co
 ```bash
 # Clone the repo:
 git clone https://github.com/PANpinchi/CVPDL_HW3_PANpinchi.git
+
 # Move into the root directory:
 cd CVPDL_HW3_PANpinchi
 ```
@@ -53,8 +54,19 @@ conda install pytorch==1.12.0 torchvision==0.13.0 torchaudio==0.12.0 cudatoolkit
 pip install -r requirements.txt
 ```
 ## Download the Required Data
-#### 1. 
-Repositories
+#### 1. Clone GitHub Repositories
+Run the commands below to clone GLIGEN and Stable Diffusion repositories.
+```bash
+git clone https://github.com/gligen/GLIGEN.git
+
+git clone https://github.com/CompVis/stable-diffusion.git
+```
+```bash
+# move file to repositories
+mv gligen_inference_cvpdl_hw3.py GLIGEN
+mv txt2img_cvpdl_hw3.py stable-diffusion/scripts
+```
+
 #### 2. Datasets
 Run the commands below to download the HW3 datasets.
 ```bash
@@ -62,92 +74,127 @@ gdown --id 1t6bFlf-hdQwiyJPTvcKblbPlR3qL_q4_
 
 unzip cvpdl_hw3.zip
 ```
-#### 2. Pre-trained Models
+#### 3. Pre-trained Models
 Run the commands below to download the pre-trained GLIGEN model. 
 ```bash
-cd detr
+cd GLIGEN
 
-# The pre-trained model. 
-gdown --folder https://drive.google.com/drive/folders/1XcTS6IyxczQuX703tUTLH8ECMUQGw8Ew?usp=drive_link
+mkdir gligen_checkpoints
 
-cd ..
+cd gligen_checkpoints
+
+wget -O checkpoint_generation_text.pth https://huggingface.co/gligen/gligen-generation-text-box/resolve/main/diffusion_pytorch_model.bin
+
+wget -O checkpoint_generation_text_image.pth https://huggingface.co/gligen/gligen-generation-text-image-box/resolve/main/diffusion_pytorch_model.bin
+
+cd ../..
 ```
-Note: `checkpoint.pth` files should be placed in the `./detr/outputs` folders.
-
-
-
-#### The data directory structure should follow the below hierarchy.
-```
-${ROOT}
-|-- test
-|   |-- images
-|   |   |-- xxx-xxx-xxx.jpeg
-|   |   |-- xxx-xxx-xxx.jpeg
-|   |   |-- ...
-|   |   |-- xxx-xxx-xxx.jpeg
-|-- train
-|   |-- images
-|   |   |-- xxx-xxx-xxx.jpeg
-|   |   |-- xxx-xxx-xxx.jpeg
-|   |   |-- ...
-|   |   |-- xxx-xxx-xxx.jpeg
-|   |-- labels
-|   |   |-- xxx-xxx-xxx.txt
-|   |   |-- xxx-xxx-xxx.txt
-|   |   |-- ...
-|   |   |-- xxx-xxx-xxx.txt
-|-- valid
-|   |-- images
-|   |   |-- xxx-xxx-xxx.jpeg
-|   |   |-- xxx-xxx-xxx.jpeg
-|   |   |-- ...
-|   |   |-- xxx-xxx-xxx.jpeg
-|   |-- labels
-|   |   |-- xxx-xxx-xxx.txt
-|   |   |-- xxx-xxx-xxx.txt
-|   |   |-- ...
-|   |   |-- xxx-xxx-xxx.txt
-```
-
-## 【Dataset Preprocessing】
-#### Run the commands below to preprocess the dataset.
+Run the commands below to download the pre-trained Stable Diffusion model. 
 ```bash
-python convert2coco.py
+cd stable-diffusion/models/ldm
+
+mkdir stable-diffusion-v1
+
+cd stable-diffusion-v1
+
+wget -O model.ckpt https://huggingface.co/CompVis/stable-diffusion-v-1-4-original/resolve/main/sd-v1-4.ckpt
+
+cd ../../../..
 ```
 
-## 【Training】
-#### Run the commands below to train the DETR model.
+## 【Stage 1: Image Captioning and Prompt Design】
+#### Run the commands below to install transformers.
 ```bash
-python detr/main.py --batch_size=32 --num_workers=2 --epochs=50 \
-  --num_classes=17 --num_queries=100 --data_path='.' \
-  --train_folder='./train/images' --train_json='./train.json' \
-  --val_folder='./valid/images' --val_json='./valid.json' \
-  --output_dir='./detr/outputs' \
-  --resume='https://dl.fbaipublicfiles.com/detr/detr-r50-e632da11.pth'
+pip install git+https://github.com/huggingface/transformers.git
+```
+#### Run the commands below to perform image captioning.
+```bash
+python image_captioning.py
 ```
 
-## 【Testing】
-#### Run the commands below to test the DETR model.
+## 【Stage 2: Text-to-Image Generation for Data Augmentation】
+#### Run the commands below to perform text-to-image generation. (text only)
 ```bash
-python test.py
+# install transformers
+pip install git+https://github.com/huggingface/transformers.git
+
+cd stable-diffusion
+
+python scripts/txt2img_cvpdl_hw3.py \
+    --label_file <LABEL_FILE> \
+    --prompt_type <PROMPT_TYPE> \
+    --outdir <OUTDIR>
+
+# Example
+python scripts/txt2img_cvpdl_hw3.py \
+    --label_file "../visualiztion_200_with_blip2-opt-6.7b-coco.json" \
+    --prompt_type "prompt_w_label" \
+    --outdir "outputs/text2imgs_with_blip2-opt-6.7b-coco_prompt_w_label"
 ```
+### Available Label File
+The following json file can be specified with the `--label_file` option:
+- `../visualiztion_200_with_blip2-opt-6.7b-coco.json`
+- `../label_with_blip2-opt-2.7b.json`
+- `../label_with_blip2-opt-6.7b-coco.json`
+- `../label_with_blip2-opt-6.7b.json`
+- `../label_with_blip2-flan-t5-xl.json`
+
+### Available Prompt Type
+The following prompt type can be specified with the `--prompt_type` option:
+- `generated_text`
+- `prompt_w_label`
+- `prompt_w_suffix`
+
+
+#### Run the commands below to perform layout-to-image generation.
+#### (text + layout / text + layout + reference images)
+```bash
+# install transformers
+pip install transformers==4.19.2
+
+cd GLIGEN
+
+python gligen_inference_cvpdl_hw3.py \
+    --label_file <LABEL_FILE> \
+    --model_type <MODEL_TYPE> \
+    --prompt_type <PROMPT_TYPE> \
+    --outdir <OUTDIR>
+
+# Example
+python gligen_inference_cvpdl_hw3.py \
+    --label_file "../visualiztion_200_with_blip2-opt-6.7b-coco.json" \
+    --model_type "box_text_image" \
+    --prompt_type "prompt_w_label" \
+    --outdir "layout2imgs_with_blip2-opt-6.7b-coco_prompt_w_label"
+```
+
+### Available Label File
+The following json file can be specified with the `--label_file` option:
+- `../visualiztion_200_with_blip2-opt-6.7b-coco.json`
+- `../label_with_blip2-opt-2.7b.json`
+- `../label_with_blip2-opt-6.7b-coco.json`
+- `../label_with_blip2-opt-6.7b.json`
+- `../label_with_blip2-flan-t5-xl.json`
+
+### Available Model Type
+The following prompt type can be specified with the `--model_type` option:
+- `box_text`
+- `box_text_image`
+
+### Available Prompt Type
+The following prompt type can be specified with the `--prompt_type` option:
+- `generated_text`
+- `prompt_w_label`
+- `prompt_w_suffix`
+
+
 
 ## 【Evaluation】
-#### Run the commands below to evaluate the results. (mAP only
+#### Run the commands below to evaluate the results. (FID only
 ```bash
-python eval.py ./tmp_results/predictions_10.json valid_target.json 
-
-python eval.py ./predictions/valid_r12942103.json valid_target.json 
-
-python eval.py ./predictions/test_r12942103.json <test_target.json>
+pip install pytorch_fid
 ```
-
-#### Run the commands below to evaluate the results. (mAP, AP50, AP75
 ```bash
-python eval_ours.py ./tmp_results/predictions_10.json valid_target.json 
-
-python eval_ours.py ./predictions/valid_r12942103.json valid_target.json 
-
-python eval_ours.py ./predictions/test_r12942103.json <test_target.json>
+python -m pytorch_fid <Path_to_dataset1> <Path_to_dataset2>
 ```
 
