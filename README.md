@@ -53,7 +53,9 @@ conda install pytorch==1.12.0 torchvision==0.13.0 torchaudio==0.12.0 cudatoolkit
 pip install -r requirements.txt
 ```
 ## Download the Required Data
-#### 1. Datasets
+#### 1. 
+Repositories
+#### 2. Datasets
 Run the commands below to download the HW3 datasets.
 ```bash
 gdown --id 1t6bFlf-hdQwiyJPTvcKblbPlR3qL_q4_
