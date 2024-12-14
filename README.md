@@ -41,10 +41,10 @@ cd CVPDL_HW3_PANpinchi
 ## Environment Settings
 ```bash
 # Create a virtual conda environment:
-conda create -n cvpdl_hw1 python=3.10
+conda create -n cvpdl_hw3 python=3.10
 
 # Activate the environment:
-conda activate cvpdl_hw1
+conda activate cvpdl_hw3
 
 # Install PyTorch, TorchVision, and Torchaudio with CUDA 11.3
 conda install pytorch==1.12.0 torchvision==0.13.0 torchaudio==0.12.0 cudatoolkit=11.3 -c pytorch
@@ -53,8 +53,15 @@ conda install pytorch==1.12.0 torchvision==0.13.0 torchaudio==0.12.0 cudatoolkit
 pip install -r requirements.txt
 ```
 ## Download the Required Data
-#### 1. Pre-trained Models
-Run the commands below to download the pre-trained DETR model. 
+#### 1. Datasets
+Run the commands below to download the HW3 datasets.
+```bash
+gdown --id 1t6bFlf-hdQwiyJPTvcKblbPlR3qL_q4_
+
+unzip cvpdl_hw3.zip
+```
+#### 2. Pre-trained Models
+Run the commands below to download the pre-trained GLIGEN model. 
 ```bash
 cd detr
 
@@ -65,13 +72,7 @@ cd ..
 ```
 Note: `checkpoint.pth` files should be placed in the `./detr/outputs` folders.
 
-#### 2. Datasets
-Run the commands below to download the HW1 datasets.
-```bash
-gdown --id 1lWdAdjRvQHULW2AbDeZiR-S4Qw5SQ3nE
 
-unzip cvpdl_hw1.zip
-```
 
 #### The data directory structure should follow the below hierarchy.
 ```
